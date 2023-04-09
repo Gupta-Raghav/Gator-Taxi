@@ -11,7 +11,8 @@ struct ride
 };
 struct Node
 {
-    int data;     // holds the key
+    ride data;
+    // int data;     // holds the key
     Node *parent; // pointer to the parent
     Node *left;   // pointer to left child
     Node *right;  // pointer to right child
@@ -113,61 +114,59 @@ public:
 class RBTree
 {
 private:
-    NodePtr root;
-    NodePtr TNULL;
+    Node *root;
+    Node *TNULL;
 
-    // initializes the nodes with appropirate values
-    // all the pointers are set to point to the null pointer
-    void initializeNULLNode(NodePtr node, NodePtr parent)
+    // initializes the nodes with appropriate values
+    void initializeNULLNode(Node *node, Node *parent)
     {
-        // node->data.ride_number = 0;
-        // node->data.ride_cost = 0;
-        // node->data.trip_duration = 0;
-        node->data = 0;
+        node->data.ride_number = 0;
+        node->data.ride_cost = 0;
+        node->data.trip_duration = 0;
         node->parent = parent;
         node->left = nullptr;
         node->right = nullptr;
         node->color = 0;
     }
 
-    void preOrderHelper(NodePtr node)
+    void preOrderHelper(Node *node)
     {
         if (node != TNULL)
         {
-            cout << node->data << " ";
+            cout << node->data.ride_number << " ";
             preOrderHelper(node->left);
             preOrderHelper(node->right);
         }
     }
 
-    void inOrderHelper(NodePtr node)
+    void inOrderHelper(Node *node)
     {
         if (node != TNULL)
         {
             inOrderHelper(node->left);
-            cout << node->data << " ";
+            cout << node->data.ride_number << " ";
             inOrderHelper(node->right);
         }
     }
 
-    void postOrderHelper(NodePtr node)
+    void postOrderHelper(Node *node)
     {
         if (node != TNULL)
         {
             postOrderHelper(node->left);
             postOrderHelper(node->right);
-            cout << node->data << " ";
+            cout << node->data.ride_number << " ";
         }
     }
 
-    NodePtr searchTreeHelper(NodePtr node, int key)
+    Node *searchTreeHelper(Node *node, int key)
     {
-        if (node == TNULL || key == node->data)
+        if (node == TNULL || key == node->data.ride_number)
         {
             return node;
         }
 
-        if (key < node->data)
+        if (key < node->data.ride_number)
         {
             return searchTreeHelper(node->left, key);
         }
@@ -282,12 +281,12 @@ private:
         NodePtr x, y;
         while (node != TNULL)
         {
-            if (node->data == key)
+            if (node->data.ride_number == key)
             {
                 z = node;
             }
 
-            if (node->data <= key)
+            if (node->data.ride_number <= key)
             {
                 node = node->right;
             }
@@ -426,7 +425,9 @@ private:
             }
 
             string sColor = root->color ? "RED" : "BLACK";
-            cout << root->data << "(" << sColor << ")" << endl;
+            cout << "{" << root->data.ride_number << "," << root->data.ride_cost << "," << root->data.trip_duration
+                 << "}"
+                 << "(" << sColor << ")" << endl;
             printHelper(root->left, indent, false);
             printHelper(root->right, indent, true);
         }
@@ -588,12 +589,14 @@ public:
 
     // insert the key to the tree in its appropriate position
     // and fix the tree
-    void insert(int key)
+    void insert(ride key)
     {
         // Ordinary Binary Search Insertion
         NodePtr node = new Node;
         node->parent = nullptr;
-        node->data = key;
+        node->data.ride_number = key.ride_number;
+        node->data.ride_cost = key.ride_cost;
+        node->data.trip_duration = key.trip_duration;
         node->left = TNULL;
         node->right = TNULL;
         node->color = 1; // new node must be red
@@ -604,7 +607,7 @@ public:
         while (x != TNULL)
         {
             y = x;
-            if (node->data < x->data)
+            if (node->data.ride_number < x->data.ride_number)
             {
                 x = x->left;
             }
@@ -615,12 +618,14 @@ public:
         }
 
         // y is parent of x
+        // when the inserting node is the first node it skips the above while loop and reaches this
+        // which sets the inserting node's parent to y in a way saying that this the root node as it won't have any parent.
         node->parent = y;
         if (y == nullptr)
         {
             root = node;
         }
-        else if (node->data < y->data)
+        else if (node->data.ride_number < y->data.ride_number)
         {
             y->left = node;
         }
@@ -715,11 +720,14 @@ int main(int argc, char **argv)
             trip_duration = stoi(token);
             ride r = {ride_num, ride_cost, trip_duration};
             heap.insert(r);
+            rbt.insert(r);
+            rbt.prettyPrint();
             // TODO: implement Insert command
         }
         else if (command.find("Print") != string::npos)
         {
             cout << " " << endl;
+            // rbt.prettyPrint();
             // heap.print();
             // TODO: implement Print command
         }
