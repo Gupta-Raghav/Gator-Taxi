@@ -1,14 +1,12 @@
+// Red Black Tree implementation in C++
+// Author: Algorithm Tutor
+// Tutorial URL: https://algorithmtutor.com/Data-Structures/Tree/Red-Black-Trees/
+
 #include <iostream>
-#include <bits/stdc++.h>
 
 using namespace std;
 
-struct ride
-{
-    int ride_number;
-    int ride_cost;
-    int trip_duration;
-};
+// data structure that represents a node in the tree
 struct Node
 {
     int data;     // holds the key
@@ -19,97 +17,8 @@ struct Node
 };
 
 typedef Node *NodePtr;
-//changed the code from a struct to class. 
-class MinHeap {
-private:
-    vector<ride> heap;
-    unordered_map<int, int> indices;
-    void heapify(int i) {
-        int left = 2 * i + 1;
-        int right = 2 * i + 2;
-        int smallest = i;
 
-        if (left < heap.size() && heap[left].ride_cost < heap[smallest].ride_cost) {
-            smallest = left;
-        }
-
-        if (right < heap.size() && heap[right].ride_cost < heap[smallest].ride_cost) {
-            smallest = right;
-        }
-
-        if (smallest != i) {
-            swap(heap[i], heap[smallest]);
-            heapify(smallest);
-        }
-    }
-
-public:
-    void insert(ride value) {
-        heap.push_back(value);
-        int i = heap.size() - 1;
-        while (i > 0 && heap[(i - 1) / 2].ride_cost > heap[i].ride_cost) {
-            swap(heap[i], heap[(i - 1) / 2]);
-            i = (i - 1) / 2;
-        }
-    }
-
-    ride extractMin() {
-        if (heap.size() == 0) {
-            throw runtime_error("Heap is empty");
-        }
-        ride min = heap[0];
-        heap[0] = heap.back();
-        heap.pop_back();
-        heapify(0);
-        return min;
-    }
-
-    ride getMin() {
-        if (heap.size() == 0) {
-            throw runtime_error("Heap is empty");
-        }
-        return heap[0];
-    }
-
-    void cancelRide(int ride_num)
-    {
-        int index = -1;
-        // Find the index of the element to be deleted
-        for (int i = 0; i < heap.size(); i++)
-        {
-            if (heap[i].ride_number == ride_num)
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1)
-        {
-            // Element not found
-            return;
-        }
-        // Replace the element with the last element of the heap
-        heap[index] = heap.back();
-        heap.pop_back();
-        // Restore the min heap property
-        while (index > 0 && heap[index].ride_cost < heap[(index - 1) / 2].ride_cost)
-        {
-            swap(heap[index], heap[(index - 1) / 2]);
-            index = (index - 1) / 2;
-        }
-        heapify(index);
-    }
-    bool isEmpty() {
-        return heap.size() == 0;
-    }
-
-     void print() {
-        for (int i = 0; i < heap.size(); i++) {
-            cout << "Ride Number: " << heap[i].ride_number << ", Cost: " << heap[i].ride_cost << ", Duration: " << heap[i].trip_duration << endl;
-        }
-    }
-};
-
+// class RBTree implements the operations in Red Black Tree
 class RBTree
 {
 private:
@@ -120,9 +29,6 @@ private:
     // all the pointers are set to point to the null pointer
     void initializeNULLNode(NodePtr node, NodePtr parent)
     {
-        // node->data.ride_number = 0;
-        // node->data.ride_cost = 0;
-        // node->data.trip_duration = 0;
         node->data = 0;
         node->parent = parent;
         node->left = nullptr;
@@ -667,91 +573,18 @@ public:
     }
 };
 
-int main(int argc, char **argv)
+int main()
 {
-    cout << "welcome to the gator taxi\n";
-    if (argc != 2)
-    {
-        cout << "Usage: " << argv[0] << " input_file" << endl;
-        return 1;
-    }
-
-    // string input_file = argv[1];
-
-    ifstream fin(argv[1]);
-
-    if (!fin.is_open())
-    {
-        cout << "Unable to open input file" << endl;
-        return 1;
-    }
-    cout << "dekho" << endl;
-    // map<int, tuple<int, int>> redBlackTree; //ride number, tuple = ride cost and trip duration. //can't use this as of now.
-    MinHeap heap; // initialized heap at this point
-    RBTree rbt;   // initialized Red-black tree.
-    string command;
-    string line;
-    int count = 1;
-    while (getline(fin, line))
-    {
-        stringstream ss(line);
-
-        string command, data;
-        ss >> command;
-        // cout << command <<endl;
-        int ride_num, ride_cost, trip_duration;
-
-        if (command.find("Insert") != string::npos)
-        {
-            // cout<<command<<endl;
-            data = command.substr(command.find("(") + 1, command.find(")") - command.find("(") - 1);
-            stringstream ss(data);
-            string token;
-            getline(ss, token, ',');
-            ride_num = stoi(token);
-            getline(ss, token, ',');
-            ride_cost = stoi(token);
-            getline(ss, token, ',');
-            trip_duration = stoi(token);
-            ride r = {ride_num, ride_cost, trip_duration};
-            heap.insert(r);
-            // TODO: implement Insert command
-        }
-        else if (command.find("Print") != string::npos)
-        {
-            cout << " " << endl;
-            // heap.print();
-            // TODO: implement Print command
-        }
-        else if (command == "UpdateTrip")
-        {
-            cout << "UpdateTrip m hun bc" << endl;
-            char dummy;
-            ss >> dummy >> ride_num >> dummy >> trip_duration >> dummy;
-            // TODO: implement UpdateTrip command
-        }
-        else if (command.find("GetNextRide") != string::npos)
-        {
-            ride nextRide = heap.getMin();
-            cout << "(" << nextRide.ride_number << "," << nextRide.ride_cost << "," << nextRide.trip_duration << ")" << endl;
-            // TODO: implement GetNextRide command
-        }
-        else if (command.find("CancelRide") != string::npos)
-        {
-            cout << command << endl;
-            data = command.substr(command.find("(") + 1, command.find(")") - command.find("(") - 1);
-            stringstream ss(data);
-            // stringstream ss(data);
-            string token;
-            getline(ss, token, ',');
-            ride_num = stoi(token);
-            cout << "CancelRide m hun bc" << endl;
-            heap.cancelRide(ride_num);
-            heap.print();
-        }
-    }
-
-    fin.close();
-
+    RBTree bst;
+    bst.insert(8);
+    bst.insert(18);
+    bst.insert(5);
+    bst.insert(15);
+    bst.insert(17);
+    bst.insert(25);
+    bst.insert(40);
+    bst.insert(80);
+    bst.deleteNode(25);
+    bst.prettyPrint();
     return 0;
 }
