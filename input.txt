@@ -1,3 +1,4 @@
+
 Insert(25,98,46)
 GetNextRide()
 GetNextRide()
@@ -20,6 +21,6 @@ CancelRide(20)
 Insert(25,49,46)
 UpdateTrip(62,15)
 GetNextRide()
-Print(1,100)
+Print(1,99)
 Insert(53,28,19)
-Print(1,100)
+Print(1,83)
