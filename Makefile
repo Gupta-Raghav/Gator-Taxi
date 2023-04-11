@@ -1,15 +1,17 @@
-CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic
-LDFLAGS = -lboost_system -lboost_thread -lpthread
+# Variables
+CXX = g++
+CXXFLAGS = -Wall -Wextra -pedantic -std=c++11
+TARGET = gatorTaxi
 
-all: gatorTaxi
+# Default rule
+all: $(TARGET)
 
-gatorTaxi: main.o gatorTaxi.o
-	$(CXX) $(LDFLAGS) $^ -o $@
+# Rule to build the program
+$(TARGET): $(TARGET).cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
 
-
-main.o: gatorTaxi.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-
+# Clean rule
 clean:
-	rm -f gatorTaxi *.o
+	rm -f $(TARGET)
+
+.PHONY: all clean
