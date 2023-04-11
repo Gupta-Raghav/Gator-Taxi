@@ -75,6 +75,7 @@ public:
         }
         // update the idx value of the inserted ride
         indices[value.ride_number] = value.idx;
+        heapify(i);
     }
 
     ride extractMin()
@@ -107,6 +108,10 @@ public:
             // Ride not found
             return false;
         }
+        // for (auto &pair : indices)
+        // {
+        //     cout << pair.first << " : " << pair.second << endl;
+        // }
 
         int index = indices[rideNumber];
         ride existing_ride = heap[index];
@@ -122,6 +127,7 @@ public:
         else if (existing_ride.trip_duration < new_tripDuration && new_tripDuration <= 2 * existing_ride.trip_duration)
         {
             // Case b: driver cancels existing ride with a penalty of 10 and a new ride is created
+            // cout << "Inside your mom " << rideNumber << endl;
             int new_cost = existing_ride.ride_cost + 10;
             ride new_ride = {existing_ride.ride_number, new_cost, new_tripDuration, existing_ride.idx};
             cancelRide(index);
@@ -132,6 +138,7 @@ public:
         else
         {
             // Case c: ride is automatically declined and removed from the heap
+            // cout << "Inside your mom " << endl;
             cancelRide(index);
             heapify(0);
             indices.erase(rideNumber);
@@ -465,20 +472,21 @@ private:
     //     // cout<<root->left->data<<endl;
     // }
 
-    void printHelper(NodePtr root, int least, int max)
+    void printHelper(NodePtr root, int least, int max, bool isLast)
     {
-        // cout << max << " " << least << endl;
-        // print the tree structure on the screen
-        if (root->data.ride_number >= least && root->data.ride_number <= max && root != TNULL)
+        if (root != TNULL)
         {
-            printHelper(root->left, least, max);
-            cout << "(" << root->data.ride_number << "," << root->data.ride_cost << "," << root->data.trip_duration
-                 << ")"
-                 << ",";
-            printHelper(root->right, least, max);
+            if (root->data.ride_number >= least && root->data.ride_number <= max)
+            {
+                printHelper(root->left, least, max, isLast && root->right == TNULL);
+                cout << "(" << root->data.ride_number << "," << root->data.ride_cost << "," << root->data.trip_duration << ")";
+                if (!isLast)
+                {
+                    cout << ",";
+                }
+                printHelper(root->right, least, max, isLast);
+            }
         }
-
-        // cout<<root->left->data<<endl;
     }
 
 public:
@@ -721,7 +729,8 @@ public:
         // cout << "printing the triplets" << endl;
         if (root)
         {
-            printHelper(this->root, n1, n2);
+            bool printComma = false;
+            printHelper(this->root, n1, n2, printComma);
             cout << endl;
         }
         // cout << "ENOUGH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
