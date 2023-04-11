@@ -59,13 +59,19 @@ public:
         value.idx = heap.size(); // update the idx value of the ride to be inserted
         heap.push_back(value);
         int i = heap.size() - 1;
-        while (i > 0 && heap[(i - 1) / 2].ride_cost > heap[i].ride_cost)
+        while (i > 0)
         {
-            swap(heap[i], heap[(i - 1) / 2]);
+            int parent_idx = (i - 1) / 2;
+            if (heap[parent_idx].ride_cost < heap[i].ride_cost ||
+                (heap[parent_idx].ride_cost == heap[i].ride_cost && heap[parent_idx].trip_duration <= heap[i].trip_duration))
+            {
+                break;
+            }
+            swap(heap[i], heap[parent_idx]);
             // update the idx values of the swapped rides
             indices[heap[i].ride_number] = i;
-            indices[heap[(i - 1) / 2].ride_number] = (i - 1) / 2;
-            i = (i - 1) / 2;
+            indices[heap[parent_idx].ride_number] = parent_idx;
+            i = parent_idx;
         }
         // update the idx value of the inserted ride
         indices[value.ride_number] = value.idx;
@@ -92,42 +98,44 @@ public:
         return heap[0];
     }
 
-    void updateTrip(int rideNumber, int new_tripDuration)
+    bool updateTrip(int rideNumber, int new_tripDuration)
     {
+
         // Check if rideNumber is in the heap
         if (indices.find(rideNumber) == indices.end())
         {
-            // cout << "Ride " << rideNumber << " not found" << endl;
-            return;
+            // Ride not found
+            return false;
         }
 
         int index = indices[rideNumber];
         ride existing_ride = heap[index];
-        // cout << "Existing ride info: "
-        //      << "ride_number: " << existing_ride.ride_number << ", ride_cost: " << existing_ride.ride_cost << ", trip_duration: " << existing_ride.trip_duration << ", idx: " << existing_ride.idx << endl;
 
-        if (new_tripDuration <= existing_ride.trip_duration)
+        if (new_tripDuration <= heap[index].trip_duration)
         {
             // Case a: Trip Duration update
             existing_ride.trip_duration = new_tripDuration;
-            // cout << "Trip duration updated " << existing_ride.trip_duration << endl;
-            return;
+            heap[index].trip_duration = new_tripDuration; // Update the heap
+            heapify(0);
+            return false;
         }
-        else if (existing_ride.trip_duration < new_tripDuration <= 2 * existing_ride.trip_duration)
+        else if (existing_ride.trip_duration < new_tripDuration && new_tripDuration <= 2 * existing_ride.trip_duration)
         {
             // Case b: driver cancels existing ride with a penalty of 10 and a new ride is created
             int new_cost = existing_ride.ride_cost + 10;
             ride new_ride = {existing_ride.ride_number, new_cost, new_tripDuration, existing_ride.idx};
-            // cout << "Creating new ride with info: "
-            //      << "ride_number: " << new_ride.ride_number << ", ride_cost: " << new_ride.ride_cost << ", trip_duration: " << new_ride.trip_duration << ", idx: " << new_ride.idx << endl;
             cancelRide(index);
             insert(new_ride);
+            heapify(0);
+            return false;
         }
         else
         {
             // Case c: ride is automatically declined and removed from the heap
-            // cout << "Ride " << rideNumber << " is automatically declined" << endl;
             cancelRide(index);
+            heapify(0);
+            indices.erase(rideNumber);
+            return true;
         }
     }
 
@@ -164,7 +172,7 @@ class RBTree
 {
 private:
     Node *root;
-    Node *TNULL;
+    // Node *TNULL;
 
     // initializes the nodes with appropriate values
     void initializeNULLNode(Node *node, Node *parent)
@@ -178,36 +186,6 @@ private:
         node->color = 0;
     }
 
-    void preOrderHelper(Node *node)
-    {
-        if (node != TNULL)
-        {
-            cout << node->data.ride_number << " ";
-            preOrderHelper(node->left);
-            preOrderHelper(node->right);
-        }
-    }
-
-    void inOrderHelper(Node *node)
-    {
-        if (node != TNULL)
-        {
-            inOrderHelper(node->left);
-            cout << node->data.ride_number << " ";
-            inOrderHelper(node->right);
-        }
-    }
-
-    void postOrderHelper(Node *node)
-    {
-        if (node != TNULL)
-        {
-            postOrderHelper(node->left);
-            postOrderHelper(node->right);
-            cout << node->data.ride_number << " ";
-        }
-    }
-
     Node *searchTreeHelper(Node *node, int key)
     {
         if (node == TNULL || key == node->data.ride_number)
@@ -219,7 +197,10 @@ private:
         {
             return searchTreeHelper(node->left, key);
         }
-        return searchTreeHelper(node->right, key);
+        else
+        {
+            return searchTreeHelper(node->right, key);
+        }
     }
 
     // fix the rb tree modified by the delete operation
@@ -501,6 +482,7 @@ private:
     }
 
 public:
+    Node *TNULL;
     RBTree()
     {
         TNULL = new Node;
@@ -510,32 +492,13 @@ public:
         root = TNULL;
     }
 
-    // Pre-Order traversal
-    // Node->Left Subtree->Right Subtree
-    void preorder()
-    {
-        preOrderHelper(this->root);
-    }
-
-    // In-Order traversal
-    // Left Subtree -> Node -> Right Subtree
-    void inorder()
-    {
-        inOrderHelper(this->root);
-    }
-
-    // Post-Order traversal
-    // Left Subtree -> Right Subtree -> Node
-    void postorder()
-    {
-        postOrderHelper(this->root);
-    }
     // update trip function call here;
 
     // search the tree for the key k
     // and return the corresponding node
-    NodePtr searchTree(int k)
+    Node *searchTree(int k)
     {
+
         return searchTreeHelper(this->root, k);
     }
 
@@ -763,6 +726,16 @@ public:
         }
         // cout << "ENOUGH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
     }
+    // void prettyPrint()
+    // {
+    //     // cout << "printing the triplets" << endl;
+    //     if (root)
+    //     {
+    //         printHelper(this->root, "", false);
+    //         cout << endl;
+    //     }
+    //     // cout << "ENOUGH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+    // }
 };
 
 int main(int argc, char **argv)
@@ -833,6 +806,7 @@ int main(int argc, char **argv)
                 ride_num1 = stoi(token);
                 getline(ss, token, ',');
                 ride_num2 = stoi(token);
+                // rbt.prettyPrint();
                 rbt.prettyPrint(ride_num1, ride_num2);
                 // heap.print();
             }
@@ -840,8 +814,16 @@ int main(int argc, char **argv)
             {
                 ride_num1 = stoi(data);
                 Node *res = rbt.searchTree(ride_num1);
+                if (res == rbt.TNULL)
+                {
+                    cout << "(0,0,0)" << endl;
+                }
+                else
+                {
+                    cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
+                }
                 // cout << "Found the node-Here are the triplets: "
-                cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
+                // cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
             }
 
             //
@@ -869,8 +851,17 @@ int main(int argc, char **argv)
             // cout << "number: " << number << "duration: " << duration << endl;
             // Node *res = rbt.searchTree(number);
             // heap.updateTrip(res->data.idx, number, duration);
-            heap.updateTrip(number, duration);
-            rbt.updateTrip(number, duration);
+            bool isdeleted = heap.updateTrip(number, duration);
+            if (!isdeleted)
+            {
+                rbt.updateTrip(number, duration);
+            }
+            else
+            {
+                // cout << "here" << number << endl;
+                rbt.deleteNode(number);
+            }
+            // heap.print();
             // rbt.prettyPrint(1, 90);
             // char dummy;
             // ss >> dummy >> ride_num >> dummy >> trip_duration >> dummy;
