@@ -2,7 +2,7 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-
+struct Node;
 struct ride
 {
     int ride_number;
@@ -56,6 +56,10 @@ private:
 
 public:
     void insert(ride value) {
+        // cout << "New Ride: " << value.ride_number << " "
+        //      << "Cost: " << value.ride_cost << " "
+        //      << "Trip Duration: " << value.trip_duration << " "
+        //      << "Index: " << value.idx << endl;
         value.idx = heap.size(); // update the idx value of the ride to be inserted
         heap.push_back(value);
         int i = heap.size() - 1;
@@ -99,19 +103,14 @@ public:
         return heap[0];
     }
 
-    bool updateTrip(int rideNumber, int new_tripDuration)
+    ride updateTrip(int rideNumber, int new_tripDuration)
     {
-
         // Check if rideNumber is in the heap
         if (indices.find(rideNumber) == indices.end())
         {
             // Ride not found
-            return false;
+            return {0, 0, 0, 0}; // return a default ride object with all values set to 0
         }
-        // for (auto &pair : indices)
-        // {
-        //     cout << pair.first << " : " << pair.second << endl;
-        // }
 
         int index = indices[rideNumber];
         ride existing_ride = heap[index];
@@ -121,35 +120,34 @@ public:
             // Case a: Trip Duration update
             existing_ride.trip_duration = new_tripDuration;
             heap[index].trip_duration = new_tripDuration; // Update the heap
-            heapify(0);
-            return false;
+            heapify(index);
+            return existing_ride;
         }
         else if (existing_ride.trip_duration < new_tripDuration && new_tripDuration <= 2 * existing_ride.trip_duration)
         {
             // Case b: driver cancels existing ride with a penalty of 10 and a new ride is created
-            // cout << "Inside your mom " << rideNumber << endl;
             int new_cost = existing_ride.ride_cost + 10;
             ride new_ride = {existing_ride.ride_number, new_cost, new_tripDuration, existing_ride.idx};
-            cancelRide(index);
+            cancelRide(existing_ride.ride_number);
             insert(new_ride);
-            heapify(0);
-            return false;
+            return new_ride;
         }
         else
         {
             // Case c: ride is automatically declined and removed from the heap
-            // cout << "Inside your mom " << endl;
-            cancelRide(index);
-            heapify(0);
+            cancelRide(rideNumber);
             indices.erase(rideNumber);
-            return true;
+            existing_ride.ride_number = -1;
+            return existing_ride;
         }
     }
 
-    void cancelRide(int index)
+    void cancelRide(int rideNum)
     {
 
         // Replace the element with the last element of the heap
+        // cout << "iniside cancelRide " << index << " " << indices[index].ride_number << " " << heap[index].ride_cost << endl;
+        int index = indices[rideNum];
         heap[index] = heap.back();
         heap.pop_back();
         // Restore the min heap property
@@ -161,7 +159,7 @@ public:
             indices[heap[(index - 1) / 2].ride_number] = (index - 1) / 2;
             index = (index - 1) / 2;
         }
-        heapify(index);
+        heapify(0);
     }
 
     bool isEmpty() {
@@ -472,21 +470,65 @@ private:
     //     // cout<<root->left->data<<endl;
     // }
 
-    void printHelper(NodePtr root, int least, int max, bool isLast)
+    // void printHelper(NodePtr root, int least, int max)
+    // {
+    //     if (root == TNULL)
+    //     {
+    //         return;
+    //     }
+
+    //     if (root->data.ride_number < least)
+    //     {
+    //         printHelper(root->right, least, max);
+    //     }
+    //     else if (root->data.ride_number > max)
+    //     {
+    //         printHelper(root->left, least, max);
+    //     }
+    //     else
+    //     {
+    //         printHelper(root->left, least, max);
+    //         cout << "(" << root->data.ride_number << "," << root->data.ride_cost << "," << root->data.trip_duration << ")";
+    //         printHelper(root->right, least, max);
+    //     }
+    // }
+
+    bool printHelper(NodePtr root, int least, int max)
     {
-        if (root != TNULL)
+        bool found_triplet = false;
+        if (root == TNULL)
         {
+            return found_triplet;
+        }
+
+        if (root->data.ride_number < least)
+        {
+            found_triplet = printHelper(root->right, least, max);
+        }
+        else if (root->data.ride_number > max)
+        {
+            found_triplet = printHelper(root->left, least, max);
+        }
+        else
+        {
+            if (root->left != TNULL)
+            {
+                found_triplet = printHelper(root->left, least, max);
+            }
+
             if (root->data.ride_number >= least && root->data.ride_number <= max)
             {
-                printHelper(root->left, least, max, isLast && root->right == TNULL);
+                found_triplet = true;
                 cout << "(" << root->data.ride_number << "," << root->data.ride_cost << "," << root->data.trip_duration << ")";
-                if (!isLast)
-                {
-                    cout << ",";
-                }
-                printHelper(root->right, least, max, isLast);
+            }
+
+            if (root->right != TNULL)
+            {
+                found_triplet = printHelper(root->right, least, max);
             }
         }
+
+        return found_triplet;
     }
 
 public:
@@ -625,7 +667,7 @@ public:
         x->parent = y;
     }
 
-    void updateTrip(int rideNumber, int duration)
+    void updateTrip(int rideNumber, int cost, int duration)
     {
 
         if (searchTree(rideNumber) == TNULL)
@@ -637,6 +679,7 @@ public:
         {
             // Ordinary Binary Search Insertion
             NodePtr node = searchTree(rideNumber);
+            node->data.ride_cost = cost;
             node->data.trip_duration = duration;
         }
     }
@@ -726,14 +769,16 @@ public:
     // print the tree structure on the screen
     void prettyPrint(int n1, int n2)
     {
-        // cout << "printing the triplets" << endl;
+        bool found_triplet = false;
         if (root)
         {
-            bool printComma = false;
-            printHelper(this->root, n1, n2, printComma);
-            cout << endl;
+            found_triplet = printHelper(this->root, n1, n2);
         }
-        // cout << "ENOUGH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+        if (!found_triplet)
+        {
+            cout << "(0,0,0)";
+        }
+        cout << endl;
     }
     // void prettyPrint()
     // {
@@ -749,11 +794,11 @@ public:
 
 int main(int argc, char **argv)
 {
-    cout << "welcome to the gator taxi\n";
-    if (argc != 2)
-    {
-        cout << "Usage: " << argv[0] << " input_file" << endl;
-        return 1;
+// cout << "welcome to the gator taxi\n";
+if (argc != 2)
+{
+    cout << "Usage: " << argv[0] << " input_file" << endl;
+    return 1;
     }
 
     // string input_file = argv[1];
@@ -802,29 +847,72 @@ int main(int argc, char **argv)
             // rbt.prettyPrint();
             // TODO: implement Insert command
         }
+        // else if (command.find("Print") != string::npos)
+        // {
+        //     // cout << "inside print" << endl;
+        //     int ride_num1 = 0, ride_num2 = 0;
+        //     cout << command << endl;
+        //     data = command.substr(command.find("(") + 1, command.find(")") - command.find("(") - 1);
+        //     stringstream ss(data);
+        //     if (data.length() != 1)
+        //     {
+
+        //         string token;
+        //         getline(ss, token, ',');
+        //         ride_num1 = stoi(token);
+        //         getline(ss, token, ',');
+        //         ride_num2 = stoi(token);
+        //         cout << ride_num1 << " " << ride_num2;
+        //         // rbt.prettyPrint();
+        //         rbt.prettyPrint(ride_num1, ride_num2);
+        //         // heap.print();
+        //     }
+        //     else
+        //     {
+        //         cout << "here" << endl;
+        //         ride_num1 = stoi(data);
+        //         cout << ride_num1;
+        //         Node *res = rbt.searchTree(ride_num1);
+        //         if (res == rbt.TNULL)
+        //         {
+
+        //             cout << "(0,0,0)" << endl;
+        //         }
+        //         else
+        //         {
+        //             cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
+        //         }
+        //         // cout << "Found the node-Here are the triplets: "
+        //         // cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
+        //     }
+        // }
         else if (command.find("Print") != string::npos)
         {
-            // cout << "inside print" << endl;
             int ride_num1 = 0, ride_num2 = 0;
             data = command.substr(command.find("(") + 1, command.find(")") - command.find("(") - 1);
-            stringstream ss(data);
-            if (data.length() != 1)
+            // cout << data << endl;
+
+            if (data.find(",") != string::npos)
             {
+                // Print(rideNumber1, rideNumber2)
+                stringstream ss(data);
                 string token;
                 getline(ss, token, ',');
                 ride_num1 = stoi(token);
                 getline(ss, token, ',');
                 ride_num2 = stoi(token);
-                // rbt.prettyPrint();
+                // cout << ride_num1 << " " << ride_num2;
                 rbt.prettyPrint(ride_num1, ride_num2);
-                // heap.print();
             }
             else
             {
+                // cout << "here" << endl;
                 ride_num1 = stoi(data);
+                // cout << ride_num1;
                 Node *res = rbt.searchTree(ride_num1);
                 if (res == rbt.TNULL)
                 {
+
                     cout << "(0,0,0)" << endl;
                 }
                 else
@@ -834,6 +922,7 @@ int main(int argc, char **argv)
                 // cout << "Found the node-Here are the triplets: "
                 // cout << "(" << res->data.ride_number << "," << res->data.ride_cost << "," << res->data.trip_duration << ")" << endl;
             }
+        }
 
             //
             // getline(ss, token, ',');
@@ -845,7 +934,7 @@ int main(int argc, char **argv)
             //  rbt.prettyPrint();
             //  heap.print();
             //  TODO: implement Print command
-        }
+
         else if (command.find("UpdateTrip") != string::npos)
         {
             // cout << "UpdateTrip m hun bc" << endl;
@@ -860,15 +949,15 @@ int main(int argc, char **argv)
             // cout << "number: " << number << "duration: " << duration << endl;
             // Node *res = rbt.searchTree(number);
             // heap.updateTrip(res->data.idx, number, duration);
-            bool isdeleted = heap.updateTrip(number, duration);
-            if (!isdeleted)
+            ride isdeleted = heap.updateTrip(number, duration);
+            if (isdeleted.ride_number == -1)
             {
-                rbt.updateTrip(number, duration);
-            }
-            else
-            {
-                // cout << "here" << number << endl;
                 rbt.deleteNode(number);
+            }
+            else if (isdeleted.ride_number == number)
+            {
+                rbt.updateTrip(isdeleted.ride_number, isdeleted.ride_cost, isdeleted.trip_duration);
+                // cout << "here" << number << endl;
             }
             // heap.print();
             // rbt.prettyPrint(1, 90);
@@ -884,7 +973,7 @@ int main(int argc, char **argv)
                 rbt.deleteNode(nextRide.ride_number);
 
                 // rbt.prettyPrint(nextRide.ride_number, nextRide.ride_number);
-
+                // cout << "Inside the getNextRide" << endl;
                 cout << "(" << nextRide.ride_number << "," << nextRide.ride_cost << "," << nextRide.trip_duration << ")" << endl;
                 // TODO: implement GetNextRide command
             }
@@ -900,9 +989,18 @@ int main(int argc, char **argv)
             ride_num = stoi(token);
             // cout << "CancelRide m hun bc" << endl;
             // heap.cancelRide(ride_num);
-            // Node *res = rbt.searchTree(ride_num);
-            heap.cancelRide(ride_num);
-            rbt.deleteNode(ride_num);
+            Node *res = rbt.searchTree(ride_num);
+            if (res != rbt.TNULL)
+            {
+                // cout << "here" << endl;
+                // cout << "canceling " << ride_num << endl;
+                heap.cancelRide(ride_num);
+                rbt.deleteNode(ride_num);
+            }
+            // else
+            // {
+            //     // cout << "blah blah" << ride_num << endl;
+            // }
             // heap.print();
         }
     }
